@@ -67,4 +67,4 @@ Using coefficients from the Extended GCD where $n_1 \cdot x + n_2 \cdot y = 1$, 
 $$ X = (r_2 \cdot n_1 \cdot x + r_1 \cdot n_2 \cdot y) \pmod{n_1 \cdot n_2} $$
 
 ---
-*Practiced and implemented on Jupyter/Google Colab.* \cdot x + r_1 \cdot n_2 \cdot y) \pmod{n_1 \cdot n_2} $$Practiced and implemented on Jupyter/Google Colab.
+*Practiced and implemented on Jupyter/Google Colab.*
