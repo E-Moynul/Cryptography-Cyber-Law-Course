@@ -1,4 +1,7 @@
+
 import math
+import random
+from functools import reduce
 
 # 1. Extended Euclid's Algorithm
 def extended_gcd(a, b):
@@ -78,9 +81,6 @@ def ChineseRemainderTheorem(n1, r1, n2, r2):
 
 
 
-import math
-import random
-from functools import reduce
 
 
 # ---------------------------------------------------------------
