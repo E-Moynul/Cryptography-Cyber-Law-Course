@@ -3,6 +3,8 @@ import math
 import random
 from functools import reduce
 
+
+
 # 1. Extended Euclid's Algorithm
 def extended_gcd(a, b):
     assert a >= b and b >= 0 and a + b > 0
@@ -434,6 +436,459 @@ def elgamal_encrypt(m, p, g, y):
 
 def elgamal_decrypt(c1, c2, x, p):
     return (c2 * modinv(pow(c1, x, p), p)) % p
+
+
+
+
+# ===============================================================
+# A. GCD , divisor
+# ===============================================================
+def binary_gcd(a, b):
+    """Stein's binary GCD"""
+    if a == 0:
+        return b
+    if b == 0:
+        return a
+    shift = ((a | b) & -(a | b)).bit_length() - 1
+    a >>= (a & -a).bit_length() - 1
+    while b:
+        b >>= (b & -b).bit_length() - 1
+        if a > b:
+            a, b = b, a
+        b -= a
+    return a << shift
+
+
+def divisors(n):
+    divs = [1]
+    for p, e in factorize_fast(n).items():
+        divs = [d * p ** k for d in divs for k in range(e + 1)]
+    return sorted(divs)
+
+
+def tau(n):
+
+    return reduce(lambda a, b: a * b, (e + 1 for e in factorize_fast(n).values()), 1)
+
+
+def sigma(n, k=1):
+  
+    return sum(d ** k for d in divisors(n))
+
+
+def mobius(n):
+    """Möbius function μ(n)"""
+    f = factorize_fast(n)
+    if any(e > 1 for e in f.values()):
+        return 0
+    return (-1) ** len(f)
+
+
+def verify_gauss_phi_sum(n):
+    """Gauss: Σ_{d|n} φ(d) = n"""
+    return sum(phi(d) for d in divisors(n)) == n
+
+
+def verify_phi_multiplicative(a, b):
+
+    assert gcd(a, b) == 1
+    return phi(a * b) == phi(a) * phi(b)
+
+
+def frobenius_number(a, b):
+  
+    assert gcd(a, b) == 1
+    return a * b - a - b
+
+
+# ===============================================================
+# B. Congruence
+# ===============================================================
+def crt_general(remainders, moduli):
+ 
+    x, M = remainders[0] % moduli[0], moduli[0]
+    for r, m in zip(remainders[1:], moduli[1:]):
+        g, p, _ = egcd(M, m)
+        if (r - x) % g:
+            return None
+        l = M // g * m
+        x = (x + M * (((r - x) // g * p) % (m // g))) % l
+        M = l
+    return x, M
+
+
+def modinv_euler(a, m):
+ 
+    assert gcd(a, m) == 1
+    return pow(a, phi(m) - 1, m)
+
+
+def hensel_lift(f, df, r, p, k):
+
+    mod = p
+    for _ in range(k - 1):
+        mod *= p
+        r = (r - f(r) * modinv(df(r), mod)) % mod
+    return r
+
+
+def binom_mod_prime(n, k, p):
+    """Lucas' theorem: C(n,k) mod p (p prime)"""
+    res = 1
+    while n or k:
+        ni, ki = n % p, k % p
+        if ki > ni:
+            return 0
+        res = res * math.comb(ni, ki) % p
+        n //= p
+        k //= p
+    return res
+
+
+def legendre_factorial_exponent(n, p):
+ 
+    e, q = 0, p
+    while q <= n:
+        e += n // q
+        q *= p
+    return e
+
+
+def fib_mod(n, m):
+    """Fast doubling: F(n) mod m"""
+    def fd(n):
+        if n == 0:
+            return (0, 1)
+        a, b = fd(n >> 1)
+        c = a * ((2 * b - a) % m) % m
+        d = (a * a + b * b) % m
+        return (d, (c + d) % m) if n & 1 else (c, d)
+    return fd(n)[0]
+
+
+# ===============================================================
+# C. (verifiers)
+# ===============================================================
+def fermat_little_general(a, p):
+  
+    return pow(a, p, p) == a % p
+
+
+def carmichael_theorem(a, n):
+ 
+    return pow(a, carmichael(n), n) == 1
+
+
+def verify_lagrange(a, n):
+    """Lagrange: ord(a) | φ(n)"""
+    return phi(n) % order(a, n) == 0
+
+
+def quadratic_reciprocity_check(p, q):
+    """distinct odd primes: (p/q)(q/p) = (-1)^{(p-1)(q-1)/4}"""
+    lhs = legendre(p, q) * legendre(q, p)
+    rhs = (-1) ** (((p - 1) // 2) * ((q - 1) // 2))
+    return lhs == rhs
+
+
+def quadratic_residues(p):
+ 
+    return sorted({x * x % p for x in range(1, p)})
+
+
+def bertrand_check(n):
+ 
+    return any(is_prime(k) for k in range(n + 1, 2 * n))
+
+
+def goldbach_pair(n):
+ 
+    assert n > 2 and n % 2 == 0
+    for p in sieve(n // 2):
+        if is_prime(n - p):
+            return p, n - p
+
+
+def prime_pi(n):
+  
+    return len(sieve(n))
+
+
+def is_sum_of_two_squares(n):
+  
+    return all(e % 2 == 0 for p, e in factorize_fast(n).items() if p % 4 == 3)
+
+
+def sum_of_two_squares(n):
+    for a in range(math.isqrt(n) + 1):
+        b2 = n - a * a
+        b = math.isqrt(b2)
+        if b * b == b2:
+            return a, b
+    return None
+
+
+# ===============================================================
+# D. Primitive root (general n), residues
+# ===============================================================
+def has_primitive_root(n):
+   
+    if n in (1, 2, 4):
+        return True
+    if n % 2 == 0:
+        n //= 2
+        if n % 2 == 0:
+            return False
+    return len(factorize_fast(n)) == 1
+
+
+def primitive_root_general(n):
+    if not has_primitive_root(n):
+        return None
+    if n == 1:
+        return 0
+    ph = phi(n)
+    qs = list(factorize_fast(ph))
+    for g in range(1, n):
+        if gcd(g, n) == 1 and all(pow(g, ph // q, n) != 1 for q in qs):
+            return g
+
+
+def all_primitive_roots(p):
+   
+    if p == 2:
+        return [1]
+    g = primitive_root(p)
+    return sorted(pow(g, k, p) for k in range(1, p - 1) if gcd(k, p - 1) == 1)
+
+
+# ===============================================================
+# E. Primality
+# ===============================================================
+def solovay_strassen(n, k=20):
+
+    if n < 2:
+        return False
+    if n % 2 == 0:
+        return n == 2
+    for _ in range(k):
+        a = random.randrange(2, n) if n > 2 else 2
+        j = jacobi(a, n)
+        if j == 0 or pow(a, (n - 1) // 2, n) != j % n:
+            return False
+    return True
+
+
+def lucas_test(n):
+
+    if n < 2:
+        return False
+    if n < 4:
+        return True
+    qs = list(factorize_fast(n - 1))
+    for a in range(2, min(n, 200)):
+        if pow(a, n - 1, n) != 1:
+            return False
+        if all(pow(a, (n - 1) // q, n) != 1 for q in qs):
+            return True
+    return None
+
+
+def is_carmichael(n):
+  
+    if n < 3 or n % 2 == 0 or is_prime(n):
+        return False
+    f = factorize_fast(n)
+    return all(e == 1 for e in f.values()) and all((n - 1) % (p - 1) == 0 for p in f)
+
+
+def lucas_lehmer(p):
+   
+    if p == 2:
+        return True
+    M = 2 ** p - 1
+    s = 4
+    for _ in range(p - 2):
+        s = (s * s - 2) % M
+    return s == 0
+
+
+def perfect_numbers(max_p):
+ 
+    return [2 ** (p - 1) * (2 ** p - 1) for p in range(2, max_p + 1)
+            if is_prime(p) and lucas_lehmer(p)]
+
+
+def pepin_test(n):
+   
+    F = 2 ** (2 ** n) + 1
+    return pow(3, (F - 1) // 2, F) == F - 1
+
+
+# ===============================================================
+# F. Integer roots, factoring
+# ===============================================================
+def iroot(n, k):
+    
+    lo, hi = 0, 1 << (n.bit_length() // k + 1)
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if mid ** k <= n:
+            lo = mid
+        else:
+            hi = mid - 1
+    return lo
+
+
+def is_perfect_power(n):
+  
+    if n < 2:
+        return None
+    for k in range(2, n.bit_length() + 1):
+        r = iroot(n, k)
+        if r ** k == n:
+            return r, k
+    return None
+
+
+def fermat_factor(n):
+  
+    if n % 2 == 0:
+        return 2, n // 2
+    a = math.isqrt(n)
+    if a * a < n:
+        a += 1
+    while True:
+        b2 = a * a - n
+        b = math.isqrt(b2)
+        if b * b == b2:
+            return a - b, a + b
+        a += 1
+
+
+def pollard_p_minus_1(n, B=100000):
+  
+    a = 2
+    for j in range(2, B):
+        a = pow(a, j, n)
+        d = gcd(a - 1, n)
+        if d == n:
+            return None
+        if 1 < d < n:
+            return d
+    return None
+
+
+# ===============================================================
+# G. Discrete log: Pohlig-Hellman
+# ===============================================================
+def _bsgs_order(g, h, p, q):
+ 
+    m = math.isqrt(q) + 1
+    table, cur = {}, 1
+    for j in range(m):
+        table.setdefault(cur, j)
+        cur = cur * g % p
+    factor, gamma = pow(g, -m, p), h
+    for i in range(m):
+        if gamma in table:
+            return (i * m + table[gamma]) % q
+        gamma = gamma * factor % p
+    return None
+
+
+def pohlig_hellman(g, h, p):
+
+    n = p - 1
+    rems, mods = [], []
+    for q, e in factorize_fast(n).items():
+        qe = q ** e
+        gi, hi = pow(g, n // qe, p), pow(h, n // qe, p)
+        gamma = pow(gi, q ** (e - 1), p)
+        x = 0
+        for k in range(e):
+            hk = pow(pow(gi, -x, p) * hi % p, q ** (e - 1 - k), p)
+            x += _bsgs_order(gamma, hk, p, q) * q ** k
+        rems.append(x)
+        mods.append(qe)
+    return crt(rems, mods)[0]
+
+
+# ===============================================================
+# H. Continued fractions ও Wiener's attack
+# ===============================================================
+def continued_fraction(n, d):
+    cf = []
+    while d:
+        q = n // d
+        cf.append(q)
+        n, d = d, n - q * d
+    return cf
+
+
+def convergents(cf):
+    h0, h1, k0, k1 = 0, 1, 1, 0
+    out = []
+    for a in cf:
+        h0, h1 = h1, a * h1 + h0
+        k0, k1 = k1, a * k1 + k0
+        out.append((h1, k1))
+    return out
+
+
+def wiener_attack(e, n):
+
+    for k, d in convergents(continued_fraction(e, n)):
+        if k == 0 or (e * d - 1) % k:
+            continue
+        s = n - (e * d - 1) // k + 1          # p + q
+        disc = s * s - 4 * n
+        if disc >= 0:
+            r = math.isqrt(disc)
+            if r * r == disc and (s + r) % 2 == 0:
+                return d
+    return None
+
+
+# ===============================================================
+# I. Rabin, Shamir secret sharing
+# ===============================================================
+def sqrt_mod_pq(a, p, q):
+  
+    rp, rq = tonelli_shanks(a % p, p), tonelli_shanks(a % q, q)
+    return sorted({crt([sp, sq], [p, q])[0]
+                   for sp in (rp, p - rp) for sq in (rq, q - rq)})
+
+
+def rabin_encrypt(m, n):
+    return m * m % n
+
+
+def rabin_decrypt(c, p, q):
+  
+    return sqrt_mod_pq(c, p, q)
+
+
+def shamir_split(secret, k, n, p):
+    """(k, n) threshold secret sharing, prime field mod p"""
+    coeffs = [secret] + [random.randrange(1, p) for _ in range(k - 1)]
+    return [(x, sum(c * pow(x, i, p) for i, c in enumerate(coeffs)) % p)
+            for x in range(1, n + 1)]
+
+
+def shamir_reconstruct(shares, p):
+    """Lagrange interpolation at x = 0"""
+    secret = 0
+    for i, (xi, yi) in enumerate(shares):
+        num = den = 1
+        for j, (xj, _) in enumerate(shares):
+            if i != j:
+                num = num * (-xj) % p
+                den = den * (xi - xj) % p
+        secret = (secret + yi * num * modinv(den, p)) % p
+    return secret
+
+
 
 
 # ---------------------------------------------------------------
