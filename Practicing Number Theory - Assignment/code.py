@@ -317,7 +317,7 @@ def order(a, n):
 
 
 def primitive_root(p):
-    """prime p-এর smallest primitive root (generator)"""
+  
     if p == 2:
         return 1
     factors = list(factorize_fast(p - 1))
@@ -353,7 +353,7 @@ def jacobi(a, n):
 
 
 def tonelli_shanks(n, p):
-    """x^2 ≡ n (mod p) এর x বের করে (p odd prime)"""
+ 
     if legendre(n, p) != 1:
         raise ValueError("n quadratic residue নয়")
     if p % 4 == 3:
@@ -380,7 +380,7 @@ def tonelli_shanks(n, p):
 # 12. Discrete logarithm: Baby-step Giant-step
 # ---------------------------------------------------------------
 def bsgs(g, h, p):
-    """g^x ≡ h (mod p) এর x বের করে"""
+    """"""
     m = math.isqrt(p - 1) + 1
     table = {pow(g, j, p): j for j in range(m)}
     factor = pow(g, -m, p)
@@ -393,7 +393,7 @@ def bsgs(g, h, p):
 
 
 # ---------------------------------------------------------------
-# 13. Applications: RSA, Diffie-Hellman, ElGamal (toy)
+# 13. Applications: RSA
 # ---------------------------------------------------------------
 def rsa_keygen(bits=512):
     p, q = gen_prime(bits // 2), gen_prime(bits // 2)
@@ -414,7 +414,7 @@ def rsa_decrypt(c, priv):
 
 
 def rsa_decrypt_crt(c, d, p, q):
-    """CRT দিয়ে দ্রুত RSA decrypt"""
+
     mp = pow(c, d % (p - 1), p)
     mq = pow(c, d % (q - 1), q)
     return crt([mp, mq], [p, q])[0]
@@ -423,7 +423,7 @@ def rsa_decrypt_crt(c, d, p, q):
 def diffie_hellman(p, g):
     a, b = random.randrange(2, p - 1), random.randrange(2, p - 1)
     A, B = pow(g, a, p), pow(g, b, p)
-    return pow(B, a, p), pow(A, b, p)  # দুটো সমান হবে
+    return pow(B, a, p), pow(A, b, p)  
 
 
 def elgamal_encrypt(m, p, g, y):
