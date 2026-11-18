@@ -129,6 +129,4 @@ ElGamal decrypt: 100
 - `bsgs` needs `gcd(g, p) = 1`; runtime and memory grow as √p, so it is only practical for small primes.
 - RSA here is **textbook RSA**: always use OAEP/PSS padding in real applications.
 
-## License
 
-Free to use for learning and academic work.
