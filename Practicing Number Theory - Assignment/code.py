@@ -68,8 +68,9 @@ def ChineseRemainderTheorem(n1, r1, n2, r2):
         (d, x, y) = extended_gcd(n1, n2)
     else:
         (d, y, x) = extended_gcd(n2, n1)
-        
     assert d == 1
+    ans = (r2 * n1 * x + r1 * n2 * y) % (n1 * n2)
+    return (ans + (n1 * n2)) % (n1 * n2)
 
 
 
@@ -481,5 +482,3 @@ if __name__ == "__main__":
     yk = pow(G, xk, P)
     c1, c2 = elgamal_encrypt(100, P, G, yk)
     print("ElGamal decrypt:", elgamal_decrypt(c1, c2, xk, P))
-    ans = (r2 * n1 * x + r1 * n2 * y) % (n1 * n2)
-    return (ans + (n1 * n2)) % (n1 * n2)
