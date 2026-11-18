@@ -15,6 +15,7 @@
 | **Assignment** | CT #1: Practicing Number Theory |
 | **Name** | Sikder Moynul Hasan |
 | **Student ID** | IT23017 |
+| **Platform** | Python 3.8+ |
 
 ---
 
